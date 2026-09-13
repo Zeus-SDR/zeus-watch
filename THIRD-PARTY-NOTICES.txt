@@ -1,0 +1,26 @@
+Zeus watch app — third-party notices
+
+The Zeus watch app links the following third-party libraries. Each is used
+unmodified, at the exact version and SHA-256 pinned in dependencies.json.
+
+  OkHttp 4.12.0            Copyright (C) Square, Inc.
+  Okio (JVM) 3.6.0         Copyright (C) Square, Inc.
+  Kotlin standard library 1.9.10
+                           Copyright 2010-2023 JetBrains s.r.o. and Kotlin
+                           Programming Language contributors
+  JetBrains annotations 13.0
+                           Copyright 2000-2016 JetBrains s.r.o.
+
+All four are licensed under the Apache License, Version 2.0. You may obtain a
+copy of the license at:
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
+
+Sources for each library are available from Maven Central at the URLs recorded
+in zeus-watch/dependencies.json, with the group and artifact coordinates shown
+in those URLs.

@@ -1,0 +1,34 @@
+ZEUS SDR CLIENT PROPRIETARY NOTICE
+
+Copyright (C) 2025-2026 Douglas J. Cerrato (KB2UKA) and
+                        Christian Suarez (N9WAR).
+All rights reserved.
+
+The Zeus SDR web client and its associated client-side materials, including
+the native VST3 and Audio Unit bridges (collectively, the "Client"), are
+proprietary software.
+
+The Client is licensed, not sold. Possession of a copy does not
+transfer ownership or grant any right except as stated in the
+applicable Zeus SDR End-User License Agreement.
+
+Except as that agreement or applicable law expressly permits, you
+may not:
+
+- copy or redistribute the Client;
+- modify, adapt, or create derivative works from the Client;
+- sublicense, sell, rent, lease, or otherwise transfer the Client;
+- decompile, disassemble, reverse engineer, or attempt to derive the
+  Client's source code or underlying implementation.
+
+No rights are granted by implication, estoppel, or otherwise.
+All rights not expressly granted are reserved by the copyright owners.
+
+The Zeus Station Engine is a separate program licensed under the GNU
+General Public License, version 2 or later (GPL-2.0-or-later). Nothing
+in this proprietary notice limits, restricts, or changes any right
+granted under that license with respect to the Zeus Station Engine.
+
+Questions about licensing or permitted use may be sent to:
+
+support@zeussdr.com

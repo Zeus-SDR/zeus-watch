@@ -1,0 +1,6 @@
+# Per-station build output and its local signing key must never be committed.
+*.apk
+*.keystore
+dependencies/
+build-*/
+run-*/
