@@ -70,7 +70,12 @@ pwsh ./build.ps1 -StationUrl 'https://app.zeussdr.com/?remote=YOUR_CALLSIGN' -La
 `-StationUrl` is the hosted fallback. Use the station's public X.509 certificate
 in DER or PEM format, never a private key or a password-protected identity
 bundle. The build stores only the public certificate and the configured
-addresses, in generated assets outside the repository. Do not use an address
+addresses, in generated assets outside the repository. The watch trusts the
+certificate's public key, not its exact bytes: the station re-issues its
+certificate when its LAN addresses change but keeps the key, so a rebuild is only
+needed if the station's key itself is replaced. If the station answers with a
+different key or a certificate that does not cover the LAN address, the watch
+says so instead of opening the hosted remote. Do not use an address
 containing a secret: the configured address is readable from the APK.
 
 `-DependencyCache` points at the jar cache; it defaults to a `dependencies`

@@ -11,13 +11,22 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 /**
- * Exact-certificate trust for the operator's own station. The LAN listener
- * presents a self-signed certificate, so no certificate authority can vouch
- * for it; the build embeds the public certificate and every connection must
- * match those bytes exactly.
+ * Public-key trust for the operator's own station. The LAN listener presents a
+ * self-signed certificate, so no certificate authority can vouch for it; the
+ * build embeds the station's public certificate and every connection must
+ * present the same public key. The station re-issues its certificate whenever
+ * its LAN addresses change but keeps the key, so pinning the key rather than
+ * the certificate bytes survives a new DHCP lease or VPN adapter.
  */
 public final class PinnedTls {
     private PinnedTls() { }
+
+    /** The station presented a key other than the one this build pins. */
+    public static final class StationKeyChanged extends CertificateException {
+        StationKeyChanged() {
+            super("Station key changed");
+        }
+    }
 
     public static X509TrustManager trustManager(final X509Certificate pinned) {
         return new X509TrustManager() {
@@ -35,17 +44,23 @@ public final class PinnedTls {
             public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
                 if (chain == null || chain.length == 0) throw new CertificateException("Missing server certificate");
                 chain[0].checkValidity();
-                // CertificateEncodingException is a CertificateException, so a
-                // certificate we cannot re-encode fails closed like any mismatch.
-                if (!MessageDigest.isEqual(pinned.getEncoded(), chain[0].getEncoded()))
-                    throw new CertificateException("Station certificate changed");
+                // Compare SubjectPublicKeyInfo DER; a certificate without an
+                // encodable key fails closed like any mismatch.
+                byte[] expected = pinned.getPublicKey().getEncoded();
+                byte[] presented = chain[0].getPublicKey().getEncoded();
+                if (expected == null || presented == null || !MessageDigest.isEqual(expected, presented))
+                    throw new StationKeyChanged();
             }
         };
     }
 
+    /**
+     * The embedded certificate only carries the pinned key; its own dates are
+     * not checked, because the station renews it with the same key. The
+     * presented certificate's validity is checked on every handshake.
+     */
     public static SSLContext context(X509Certificate pinned, X509TrustManager manager)
             throws GeneralSecurityException {
-        pinned.checkValidity();
         SSLContext tls = SSLContext.getInstance("TLS");
         tls.init(null, new TrustManager[] { manager }, null);
         return tls;
