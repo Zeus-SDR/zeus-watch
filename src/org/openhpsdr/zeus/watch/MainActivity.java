@@ -136,17 +136,34 @@ public final class MainActivity extends Activity implements StationClient.Listen
         if (destroyed || client != null) return;
         view.setConnection(false, "Finding the station");
         worker.execute(() -> {
-            boolean reachable = probe.reachable(stationUrl.toString(), stationCertificate);
+            LanProbe.Result result = probe.probe(stationUrl.toString(), stationCertificate);
             handler.post(() -> {
                 if (destroyed) return;
-                if (!reachable) {
-                    // Off the station's network: the hosted remote is the only
-                    // thing that can still reach the radio.
-                    view.setConnection(false, "Station not on this network");
-                    openBrowser(fallbackUrl);
-                    return;
+                switch (result) {
+                    case REACHABLE:
+                        startClient();
+                        return;
+                    case KEY_CHANGED:
+                        // Something on this network answered as the station
+                        // with a different key. Sending the operator to the
+                        // hosted remote here would only ask for the remote
+                        // password while they are standing next to the radio.
+                        showFallbackChoice("The station's security key changed. Rebuild the watch app "
+                                + "with the station's current certificate.");
+                        return;
+                    case IDENTITY_REJECTED:
+                        showFallbackChoice("The station's certificate does not cover this address. Rebuild "
+                                + "the watch app with the station's current address and certificate.");
+                        return;
+                    case NOT_READY:
+                        showFallbackChoice("The station answered but is not ready. Open Zeus again in a moment.");
+                        return;
+                    default:
+                        // Off the station's network: the hosted remote is the
+                        // only thing that can still reach the radio.
+                        view.setConnection(false, "Station not on this network");
+                        openBrowser(fallbackUrl);
                 }
-                startClient();
             });
         });
     }
@@ -551,7 +568,13 @@ public final class MainActivity extends Activity implements StationClient.Listen
         }
     }
 
-    private void showMessage(String text) {
+    /** Explains a LAN failure; tapping opens the hosted remote anyway. */
+    private void showFallbackChoice(String reason) {
+        TextView message = showMessage(reason + "\n\nTap to use the web remote.");
+        message.setOnClickListener(tap -> openBrowser(fallbackUrl));
+    }
+
+    private TextView showMessage(String text) {
         TextView message = new TextView(this);
         message.setText(text);
         message.setTextSize(14);
@@ -567,5 +590,6 @@ public final class MainActivity extends Activity implements StationClient.Listen
         bounds.setMargins(inset, inset, inset, inset);
         root.addView(scroll, bounds);
         setContentView(root);
+        return message;
     }
 }

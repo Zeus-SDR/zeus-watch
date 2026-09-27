@@ -32,6 +32,10 @@ public final class LanProbeTest {
         tls.init(manager.getKeyManagers(), null, null);
         X509Certificate cert = (X509Certificate) keys.getCertificate("test");
         X509Certificate mismatch = (X509Certificate) load(args[1]).getCertificate("test");
+        // The same key re-issued under a new certificate, as the station does
+        // when its LAN addresses change.
+        X509Certificate reissued = (X509Certificate) load(args[2]).getCertificate("test");
+        check(!java.util.Arrays.equals(cert.getEncoded(), reissued.getEncoded()), "Re-issued certificate differs");
         AtomicInteger status = new AtomicInteger(200);
         AtomicInteger delay = new AtomicInteger(0);
         java.util.concurrent.ExecutorService executor = Executors.newCachedThreadPool();
@@ -47,10 +51,15 @@ public final class LanProbeTest {
         String url = "https://127.0.0.1:" + server.getAddress().getPort() + "/?watch=1";
         try {
             check(new LanProbe().reachable(url, cert), "Pinned 200 succeeds");
+            check(new LanProbe().reachable(url, reissued), "Same key under a re-issued certificate succeeds");
             check(!new LanProbe().reachable(url, mismatch), "Different certificate fails");
+            check(new LanProbe().probe(url, mismatch) == LanProbe.Result.KEY_CHANGED, "Different key reports key change");
             check(!new LanProbe().reachable(url.replace("127.0.0.1", "localhost"), cert), "Hostname mismatch fails");
+            check(new LanProbe().probe(url.replace("127.0.0.1", "localhost"), cert) == LanProbe.Result.IDENTITY_REJECTED,
+                    "Hostname mismatch reports identity rejection");
             status.set(302); check(!new LanProbe().reachable(url, cert), "Redirect fails");
             status.set(503); check(!new LanProbe().reachable(url, cert), "Non-200 fails");
+            check(new LanProbe().probe(url, cert) == LanProbe.Result.NOT_READY, "Non-200 reports not ready");
             status.set(200); delay.set(3000);
             long start = System.nanoTime();
             check(!new LanProbe().reachable(url, cert), "Read timeout fails");
@@ -58,6 +67,9 @@ public final class LanProbeTest {
             LanProbe cancelled = new LanProbe(); cancelled.cancel();
             check(!cancelled.reachable(url, cert), "Cancelled probe fails");
         } finally { server.stop(0); executor.shutdownNow(); }
+        check(new LanProbe().probe(url, cert) == LanProbe.Result.NO_ANSWER, "Closed port reports no answer");
+        check(LanProbe.classify(new java.io.IOException("Hostname 10.0.0.5 not verified")) == LanProbe.Result.IDENTITY_REJECTED,
+                "Android hostname failure reports identity rejection");
     }
     private static KeyStore load(String path) throws Exception {
         KeyStore keys = KeyStore.getInstance("PKCS12");
